@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hymnal Chords</title>
+<style>
+:root{--bg:#f1f5f8;--card:#fff;--ink:#22313a;--mut:#5d6f7a;--pri:#1c5c7e;--acc:#e3eef4;--line:#d5e0e7;--ok:#1f7a4d;--warn:#fff4dc;--warnink:#6b4a00}
+@media (prefers-color-scheme:dark){:root{--bg:#10181d;--card:#18232a;--ink:#e6eef2;--mut:#9fb2bd;--pri:#5fb0d6;--acc:#21323b;--line:#2c3f4a;--ok:#5fd09a;--warn:#3a2f10;--warnink:#f1d79a}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 'Segoe UI',Tahoma,Verdana,sans-serif;display:flex;flex-direction:column}
+.top{background:var(--pri);color:#fff;padding:calc(12px + env(safe-area-inset-top,0px)) 14px 12px;display:flex;align-items:center;gap:10px;min-height:56px}
+.top h1{margin:0;font-size:1.1rem;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top button{background:rgba(255,255,255,.2);padding:8px 14px}
+.scr{flex:1;overflow-y:auto;padding:16px;max-width:640px;width:100%;margin:0 auto}
+.scr.hide{display:none}
+.nav{display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav button{flex:1;background:none;color:var(--mut);border-radius:0;padding:10px 4px;font-size:.8rem;display:flex;flex-direction:column;align-items:center;gap:2px}
+.nav button b{font-size:1.3rem;line-height:1}.nav button.on{color:var(--pri);font-weight:700}
+button{padding:11px 18px;border:0;border-radius:999px;background:var(--pri);color:#fff;font-size:.95rem;cursor:pointer;font-family:inherit}
+button.sec{background:var(--acc);color:var(--pri)}
+input,select{width:100%;padding:14px;font-size:1rem;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-family:inherit}
+textarea{width:100%;min-height:300px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);font:14px/1.4 ui-monospace,Menlo,Consolas,monospace;white-space:pre}
+.home{min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:12px;padding-bottom:40px}
+.home h2{margin:0;text-align:center}.mut{color:var(--mut);font-size:.9rem}.c{text-align:center}
+.item{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;border-radius:12px;margin-top:8px;background:var(--card);color:var(--ink);border:1px solid var(--line);padding:13px 14px}
+.item small{display:block;color:var(--mut)}.st{white-space:nowrap;font-size:.8rem;color:var(--mut)}.st.v{color:var(--ok);font-weight:700}
+.sec-t{font-weight:700;margin:18px 0 4px}
+.ln{padding:2px 0;line-height:1.3}
+.seg{display:inline-flex;flex-direction:column;vertical-align:bottom;white-space:pre}
+.ch{font-weight:700;color:var(--pri);min-height:1.4em;padding-right:8px}.tx{white-space:pre}
+.nota{color:var(--mut);margin-top:10px}.edit .ch{cursor:pointer;outline:2px dashed #e08a00;border-radius:4px}
+.aviso{background:var(--warn);color:var(--warnink);border-radius:10px;padding:10px 12px;font-size:.88rem;margin-top:12px}
+.bar{background:var(--card);border-top:1px solid var(--line);padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center}
+.bar select{width:auto;padding:9px;font-size:.9rem}.bar button{padding:9px 13px;font-size:.85rem}
+.hide{display:none!important}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--pri);color:#fff;padding:10px 18px;border-radius:999px;display:none;z-index:9}
+</style>
+<script src="library.js"></script>
+</head>
+<body>
+<div class="top"><button id="atras" class="hide">&larr;</button><h1 id="tituloTop">Hymnal Chords</h1></div>
+
+<!-- Search (home) -->
+<div id="sBuscar" class="scr">
+ <div class="home">
+  <h2>Find a hymn</h2>
+  <p class="c mut" style="margin:0">Search by hymn number or by a line of the lyrics</p>
+  <input id="q" placeholder="Number or lyrics..." autocomplete="off" enterkeyhint="search">
+  <button id="buscar">Search</button>
+  <div id="resultados"></div>
+ </div>
+</div>
+
+<!-- Library -->
+<div id="sLib" class="scr hide">
+ <div class="row"><strong>My library</strong> <span id="cuenta" class="mut"></span></div>
+ <div id="lista"></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+  <button id="nuevo" class="sec">+ Add hymn</button>
+  <button id="exportar">Export library.js</button>
+ </div>
+ <p class="mut">Your edits are saved in this browser. Export library.js and replace the file in your Himnario folder to keep a permanent copy.</p>
+</div>
+
+<!-- Hymn -->
+<div id="sHimno" class="scr hide">
+ <div id="meta" class="mut"></div>
+ <div id="vacio" class="hide" style="margin:14px 0">No chords yet. Tap <b>Text</b> to paste the chords and lyrics.</div>
+ <div id="cuerpo"></div>
+ <div id="aviso" class="aviso hide"></div>
+ <div id="editorTxt" class="hide" style="margin-top:12px">
+  <p class="mut">Put each chord line right above its lyric line, aligned over the syllable. Start each part with its name (Intro, Verse 1, Chorus). Inline chords like [C]word also work.</p>
+  <textarea id="txt" spellcheck="false"></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px"><button id="aplicar">Apply</button><button id="cancelarTxt" class="sec">Cancel</button></div>
+ </div>
+</div>
+
+<div id="barHimno" class="bar hide">
+ <select id="tono" title="Key"></select>
+ <button id="editar" class="sec">Chords</button>
+ <button id="editarTxt" class="sec">Text</button>
+ <button id="guardar" class="sec">Save</button>
+ <button id="verificar">Verify</button>
+ <button id="copiar" class="sec">Copy</button>
+</div>
+
+<nav class="nav" id="nav">
+ <button id="nBuscar" class="on"><b>&#9906;</b>Search</button>
+ <button id="nLib"><b>&#9835;</b>Library</button>
+</nav>
+<div id="toast"></div>
+
+<script>
+const NOTAS=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"],BEMOL={Db:"C#",Eb:"D#",Gb:"F#",Ab:"G#",Bb:"A#"};
+const CH=/^[A-G][#b]?(?:maj|min|dim|aug|sus|add|m|M)?\d*(?:(?:sus|add|maj)\d*)?(?:\/[A-G][#b]?)?$/;
+const HEAD=/^(intro|verse|chorus|refrain|bridge|pre-?chorus|interlude|outro|coda|tag|ending)\b[^\[]{0,20}$/i;
+const KEY='hymnal_local_v1';
+const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!==undefined)e.textContent=x;return e};
+const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9 ]+/g,' ').replace(/\s+/g,' ').trim();
+const BASE=Array.isArray(window.HYMN_LIBRARY)?window.HYMN_LIBRARY:[];
+let local={},actual=null,semis=0,editando=false;
+try{local=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
+
+function aviso(t){const x=$('toast');x.textContent=t;x.style.display='block';clearTimeout(aviso.i);aviso.i=setTimeout(()=>x.style.display='none',2300)}
+const todos=()=>{const m={};BASE.forEach(h=>m[h.id]=h);Object.values(local).forEach(h=>m[h.id]=h);return Object.values(m).sort((a,b)=>(a.num||9999)-(b.num||9999))};
+function guardarLocal(){try{localStorage.setItem(KEY,JSON.stringify(local));return true}catch(e){aviso('Could not save in this browser');return false}}
+function mover(ac,n){return ac.split('/').map(p=>{const m=p.match(/^([A-G][#b]?)(.*)$/);if(!m)return p;const i=NOTAS.indexOf(BEMOL[m[1]]||m[1]);return i<0?p:NOTAS[(i+n+120)%12]+m[2]}).join('/')}
+const tonoActual=()=>actual&&actual.tonalidad?mover(actual.tonalidad,semis):'';
+const letraDe=h=>(h.secciones||[]).flatMap(s=>s.lineas.map(l=>l.letra)).join(' ');
+
+// text <-> model
+const esAcordes=s=>{const t=s.trim();return !!t&&t.split(/\s+/).every(w=>CH.test(w))};
+function inline(s){let letra='',ac=[],last=0,m;const re=/\[([^\]]+)\]/g;while((m=re.exec(s))){letra+=s.slice(last,m.index);ac.push({p:letra.length,a:m[1]});last=re.lastIndex}letra+=s.slice(last);return{letra:letra.replace(/\s+$/,''),acordes:ac}}
+function parse(texto){
+  const L=texto.replace(/\r/g,'').split('\n'),secs=[];let cur=null;
+  const nueva=n=>{cur={nombre:n,lineas:[]};secs.push(cur)},cab=t=>HEAD.test(t.trim())&&!esAcordes(t);
+  for(let i=0;i<L.length;i++){
+    const raw=L[i],t=raw.trim();if(!t)continue;
+    if(cab(t)){nueva(t.replace(/:$/,''));continue}
+    if(!cur)nueva('Verse 1');
+    if(esAcordes(raw)){
+      const nx=L[i+1],toks=[...raw.matchAll(/\S+/g)];
+      if(nx!==undefined&&nx.trim()&&!esAcordes(nx)&&!cab(nx)){const letra=nx.replace(/\s+$/,'');cur.lineas.push({letra,acordes:toks.map(m=>({p:Math.min(m.index,letra.length),a:m[0]}))});i++}
+      else cur.lineas.push({letra:'',acordes:toks.map((m,k)=>({p:k,a:m[0]}))});
+    }else if(/\[[A-G][^\]]*\]/.test(raw))cur.lineas.push(inline(raw));
+    else cur.lineas.push({letra:raw.replace(/\s+$/,''),acordes:[]});
+  }
+  return secs;
+}
+function aTexto(h,n){
+  const out=[];
+  (h.secciones||[]).forEach(s=>{out.push(s.nombre);
+    s.lineas.forEach(l=>{const ac=[...l.acordes].sort((a,b)=>a.p-b.p).map(x=>({p:x.p,a:mover(x.a,n||0)}));
+      if(!l.letra){if(ac.length)out.push(ac.map(x=>x.a).join('  '));return}
+      let cl='';ac.forEach(x=>{while(cl.length<x.p)cl+=' ';if(cl.length&&!/\s$/.test(cl))cl+=' ';cl+=x.a});
+      if(cl)out.push(cl);out.push(l.letra)});
+    out.push('')});
+  return out.join('\n').trim();
+}
+
+// render
+function pintaLinea(l,si,li){
+  const d=el('div','ln'),idx=l.acordes.map((a,k)=>({...a,k})).sort((a,b)=>a.p-b.p);
+  const seg=(ch,tx,k)=>{const s=el('span','seg'),c=el('span','ch',ch?mover(ch,semis):'\u00A0');if(ch)c.dataset.p=si+','+li+','+k;s.append(c,el('span','tx',tx||'\u00A0'));return s};
+  if(!l.letra){idx.forEach(x=>{const s=el('span','seg'),c=el('span','ch',mover(x.a,semis));c.dataset.p=si+','+li+','+x.k;s.append(c);d.appendChild(s)});return d}
+  if(!idx.length){d.appendChild(el('div','nota',l.letra));return d}
+  if(idx[0].p>0)d.appendChild(seg('',l.letra.slice(0,idx[0].p)));
+  idx.forEach((x,j)=>d.appendChild(seg(x.a,l.letra.slice(x.p,j+1<idx.length?idx[j+1].p:undefined),x.k)));
+  return d;
+}
+function mostrar(){
+  const h=actual,tiene=h.secciones&&h.secciones.length;
+  $('tituloTop').textContent=(h.num?h.num+'. ':'')+h.title;
+  $('vacio').classList.toggle('hide',!!tiene);$('cuerpo').replaceChildren();$('cuerpo').classList.toggle('edit',editando);
+  $('tono').value=semis;$('editar').textContent=editando?'Done':'Chords';
+  ['editar','guardar','verificar','copiar','tono'].forEach(b=>$(b).classList.toggle('hide',!tiene));
+  if(tiene){
+    h.secciones.forEach((s,si)=>{$('cuerpo').appendChild(el('div','sec-t',s.nombre));s.lineas.forEach((l,li)=>$('cuerpo').appendChild(pintaLinea(l,si,li)))});
+    $('meta').textContent='Key: '+tonoActual()+(h.compas?' · Time '+h.compas:'')+(h.capo?' · Capo: '+h.capo:'')+' · '+(h.estado==='verified'?'Verified ✓':'Draft');
+    $('aviso').classList.toggle('hide',h.estado==='verified');$('aviso').textContent='Draft: check every chord against your hymnal, then tap Verify.';
+  }else{$('meta').textContent='';$('aviso').classList.add('hide')}
+}
+
+// navigation
+function pantalla(n){
+  ['sBuscar','sLib','sHimno'].forEach(s=>$(s).classList.toggle('hide',s!==n));
+  const h=n==='sHimno';$('nav').classList.toggle('hide',h);$('barHimno').classList.toggle('hide',h?false:true);$('atras').classList.toggle('hide',!h);
+  $('nBuscar').classList.toggle('on',n==='sBuscar');$('nLib').classList.toggle('on',n==='sLib');
+  if(!h)$('tituloTop').textContent=n==='sLib'?'Library':'Hymnal Chords';
+  if(n==='sLib')pintarLista();window.scrollTo(0,0);
+}
+let desde='sBuscar';
+function abrir(id,origen){actual=JSON.parse(JSON.stringify(todos().find(h=>h.id===id)));semis=0;editando=false;desde=origen;
+  $('editorTxt').classList.add('hide');pantalla('sHimno');mostrar();$('sHimno').scrollTop=0}
+
+function tarjeta(h,extra){const b=el('button','item'),l=el('span');l.append(document.createTextNode((h.num?h.num+'. ':'')+h.title));if(extra)l.append(el('small','',extra));
+  b.append(l,el('span','st'+(h.estado==='verified'?' v':''),h.estado==='verified'?'Verified ✓':(h.secciones&&h.secciones.length?'Draft':'No chords yet')));return b}
+
+// search by number or lyrics
+function buscar(){
+  const R=$('resultados');R.replaceChildren();const q=$('q').value.trim();
+  if(!q){R.appendChild(el('p','c mut','Type a hymn number or a line of the lyrics.'));return}
+  const num=q.replace(/^(#|no\.?|number|hymn)\s*/i,'').trim();let res=[];
+  if(/^\d+$/.test(num))res=todos().filter(h=>String(h.num)===num).map(h=>({h,m:''}));
+  if(!res.length){const qn=norm(q);if(qn){
+    todos().forEach(h=>{if(norm(h.title).includes(qn))res.push({h,m:'Matched in title'});else if(norm(letraDe(h)).includes(qn))res.push({h,m:'Matched in lyrics'})})}}
+  if(!res.length){R.appendChild(el('p','c mut','No hymn matches. Lyrics only match hymns whose text you already added.'));return}
+  res.forEach(r=>{const b=tarjeta(r.h,r.m);b.onclick=()=>abrir(r.h.id,'sBuscar');R.appendChild(b)});
+}
+function pintarLista(){
+  const L=$('lista');L.replaceChildren();const t=todos();
+  t.forEach(h=>{const b=tarjeta(h);b.onclick=()=>abrir(h.id,'sLib');L.appendChild(b)});
+  $('cuenta').textContent='· '+t.filter(h=>h.estado==='verified').length+' of '+t.length+' verified';
+}
+
+// events
+$('buscar').onclick=buscar;
+$('q').addEventListener('keydown',e=>{if(e.key==='Enter')buscar()});
+$('nBuscar').onclick=()=>pantalla('sBuscar');$('nLib').onclick=()=>pantalla('sLib');
+$('atras').onclick=()=>pantalla(desde);
+$('tono').onchange=e=>{semis=+e.target.value;mostrar()};
+$('editar').onclick=()=>{editando=!editando;mostrar();aviso(editando?'Tap a chord to change it':'Done')};
+$('cuerpo').onclick=e=>{const c=e.target.closest('.ch[data-p]');if(!c||!editando)return;
+  const n=prompt('New chord:',c.textContent);if(!n||!n.trim())return;
+  const [s,l,k]=c.dataset.p.split(',').map(Number);actual.secciones[s].lineas[l].acordes[k].a=mover(n.trim(),-semis);
+  if(actual.estado==='verified')actual.estado='draft';mostrar()};
+$('editarTxt').onclick=()=>{$('txt').value=aTexto(actual,0);$('editorTxt').classList.remove('hide');$('txt').focus()};
+$('cancelarTxt').onclick=()=>$('editorTxt').classList.add('hide');
+$('aplicar').onclick=()=>{const s=parse($('txt').value);if(!s.length){aviso('Nothing to apply');return}
+  actual.secciones=s;if(!actual.tonalidad){const f=s.flatMap(x=>x.lineas).flatMap(l=>l.acordes)[0];actual.tonalidad=f?f.a:'C'}
+  actual.estado='draft';$('editorTxt').classList.add('hide');mostrar();aviso('Applied. Tap Save')};
+function persistir(est){actual.estado=est;local[actual.id]=JSON.parse(JSON.stringify(actual));if(guardarLocal()){aviso(est==='verified'?'Saved as verified ✓':'Saved');mostrar()}}
+$('guardar').onclick=()=>persistir('draft');$('verificar').onclick=()=>persistir('verified');
+$('copiar').onclick=async()=>{const t=actual.title+'\nKey: '+tonoActual()+'\n\n'+aTexto(actual,semis);
+  try{await navigator.clipboard.writeText(t);aviso('Copied')}catch(e){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');aviso('Copied')}catch(_){aviso('Could not copy')}ta.remove()}};
+$('nuevo').onclick=()=>{const t=prompt('Hymn title:');if(!t||!t.trim())return;const n=parseInt(prompt('Hymn number (optional):')||'',10);
+  const id=norm(t).replace(/ /g,'-')||('hymn-'+Date.now());local[id]={id,title:t.trim(),num:isNaN(n)?null:n,estado:'none',secciones:[]};
+  if(guardarLocal()){pintarLista();aviso('Hymn added')}};
+$('exportar').onclick=()=>{const txt='// Hymn library exported from the app.\nwindow.HYMN_LIBRARY = '+JSON.stringify(todos(),null,1)+';\n';
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/javascript'}));a.download='library.js';document.body.appendChild(a);a.click();a.remove();
+  aviso('library.js downloaded. Replace the old file in your folder')};
+
+NOTAS.forEach((n,i)=>{const o=el('option','',i===0?'Original key':'+'+i);o.value=i;$('tono').appendChild(o)});
+pantalla('sBuscar');
+</script>
+</body>
+</html>
